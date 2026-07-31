@@ -1,0 +1,23 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Node / frontend
+node_modules/
+numer/FE/node_modules/
+numer/BE/node_modules/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+build/
+dist/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*

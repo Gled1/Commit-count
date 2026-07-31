@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GitHub Commit Counter</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f3f4f6;
+    padding:40px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:white;
+    border-radius:10px;
+    padding:25px;
+    box-shadow:0 5px 15px rgba(0,0,0,.15);
+}
+
+h1{
+    margin-bottom:25px;
+    color:#24292f;
+}
+
+.form{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+
+input, select{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:15px;
+}
+
+button{
+    background:#24292f;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:15px;
+    padding:10px 16px;
+}
+
+button:hover{
+    background:#444;
+}
+
+.repo-toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+.repo-toolbar input{
+    flex:1 1 260px;
+}
+
+.repo-toolbar select{
+    flex:1 1 280px;
+}
+
+.repo-badge{
+    display:inline-block;
+    background:#eef6ff;
+    color:#1f4f8f;
+    border-radius:999px;
+    padding:6px 12px;
+    font-size:13px;
+    font-weight:bold;
+}
+
+#summary{
+    font-size:20px;
+    margin:20px 0;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+thead{
+    background:#24292f;
+    color:white;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:left;
+}
+
+tbody tr:nth-child(even){
+    background:#f7f7f7;
+}
+
+tbody tr:hover{
+    background:#eef5ff;
+}
+
+.message{
+    max-width:500px;
+    word-break:break-word;
+}
+
+.loading{
+    color:#0066cc;
+}
+
+.error{
+    color:red;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>GitHub Commit Counter</h1>
+
+<div class="form">
+
+<div class="repo-toolbar">
+    <input
+    id="owner"
+    placeholder="GitHub Owner (e.g. microsoft)">
+
+    <button onclick="loadRepos()">
+    Load Repos
+    </button>
+
+    <select id="repoSelect">
+        <option value="">Select a repository</option>
+    </select>
+
+    <input type="date" id="since" placeholder="From date">
+    <input type="date" id="until" placeholder="To date">
+
+    <button onclick="loadCommits()">
+    Search
+    </button>
+</div>
+
+<div id="repoCount" class="repo-badge" style="margin-bottom: 12px;"></div>
+<div id="summary"></div>
+
+<table>
+
+<thead>
+
+<tr>
+<th>#</th>
+<th>SHA</th>
+<th>Author</th>
+<th>Date</th>
+<th>Message</th>
+</tr>
+
+</thead>
+
+<tbody id="tableBody">
+
+</tbody>
+
+</table>
+
+</div>
+
+<script>
+
+async function loadRepos(){
+
+const owner=document.getElementById("owner").value.trim();
+
+if(!owner){
+    alert("Please enter the GitHub owner.");
+    return;
+}
+
+const repoSelect=document.getElementById("repoSelect");
+repoSelect.innerHTML='<option value="">Loading repositories...</option>';
+document.getElementById("repoCount").innerHTML="<span class='loading'>Loading repositories...</span>";
+
+document.getElementById("summary").innerHTML="";
+
+try{
+    const response=await fetch(`http://localhost:5000/api/repos?owner=${encodeURIComponent(owner)}`);
+    const data=await response.json();
+
+    if(!response.ok){
+        throw new Error(data.error || "Server error.");
+    }
+
+    repoSelect.innerHTML='';
+    const defaultOption=document.createElement("option");
+    defaultOption.value="";
+    defaultOption.textContent=`Choose one of ${data.total} repositories`;
+    repoSelect.appendChild(defaultOption);
+
+    data.repos.forEach((repo)=>{
+        const option=document.createElement("option");
+        option.value=repo.name;
+        option.textContent=repo.name;
+        repoSelect.appendChild(option);
+    });
+
+    document.getElementById("repoCount").innerHTML=`<span class='loading'>Found ${data.total} repositories for ${owner}.</span>`;
+
+}catch(error){
+    repoSelect.innerHTML='<option value="">No repositories found</option>';
+    document.getElementById("repoCount").innerHTML=`<span class="error">${error.message}</span>`;
+}
+
+}
+
+async function loadCommits(){
+
+const owner=document.getElementById("owner").value.trim();
+const repo=document.getElementById("repoSelect").value;
+const since=document.getElementById("since").value;
+const until=document.getElementById("until").value;
+
+if(!owner || !repo){
+    alert("Please enter the GitHub owner and choose a repository.");
+    return;
+}
+
+const table=document.getElementById("tableBody");
+table.innerHTML="";
+
+document.getElementById("summary").innerHTML=
+"<span class='loading'>Loading...</span>";
+
+try{
+
+const params=new URLSearchParams();
+
+params.append("owner",owner);
+params.append("repo",repo);
+
+if(since)
+    params.append("since",since+"T00:00:00Z");
+
+if(until)
+    params.append("until",until+"T23:59:59Z");
+
+const response=await fetch(
+`http://localhost:5000/api/commits?${params.toString()}`
+);
+
+const data=await response.json();
+
+if(!response.ok){
+    throw new Error(data.error || "Server error.");
+}
+
+document.getElementById("summary").innerHTML=
+`Total Commits: ${data.total}`;
+
+data.commits.forEach((commit,index)=>{
+
+const row=document.createElement("tr");
+
+row.innerHTML=`
+
+<td>${index+1}</td>
+
+<td>${commit.sha}</td>
+
+<td>${commit.author}</td>
+
+<td>${new Date(commit.date).toLocaleString()}</td>
+
+<td class="message">${commit.message}</td>
+
+`;
+
+table.appendChild(row);
+
+});
+
+if(data.total===0){
+
+table.innerHTML=
+"<tr><td colspan='5'>No commits found.</td></tr>";
+
+}
+
+}catch(error){
+
+document.getElementById("summary").innerHTML=
+`<span class="error">${error.message}</span>`;
+
+}
+
+}
+
+</script>
+
+</body>
+
+</html>
