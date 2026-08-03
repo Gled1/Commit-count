@@ -87,19 +87,6 @@ button:hover{
     flex:0 0 auto;
 }
 
-.repo-badge{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    background:#1d4ed8;
-    color:#eff6ff;
-    border-radius:999px;
-    padding:6px 12px;
-    font-size:13px;
-    font-weight:bold;
-    min-height:32px;
-    line-height:1;
-}
 
 #summary{
     font-size:20px;
@@ -177,7 +164,6 @@ tbody tr:hover{
     </button>
 </div>
 
-<div id="repoCount" class="repo-badge" style="margin-bottom: 12px;"></div>
 <div id="summary"></div>
 
 <table>
@@ -215,7 +201,6 @@ if(!owner){
 
 const repoSelect=document.getElementById("repoSelect");
 repoSelect.innerHTML='<option value="">Loading repositories...</option>';
-document.getElementById("repoCount").innerHTML="<span class='loading'>Loading repositories...</span>";
 
 document.getElementById("summary").innerHTML="";
 
@@ -240,11 +225,9 @@ try{
         repoSelect.appendChild(option);
     });
 
-    document.getElementById("repoCount").innerHTML=`<span class='loading'>Found ${data.total} repositories for ${owner}.</span>`;
-
 }catch(error){
     repoSelect.innerHTML='<option value="">No repositories found</option>';
-    document.getElementById("repoCount").innerHTML=`<span class="error">${error.message}</span>`;
+    document.getElementById("summary").innerHTML=`<span class="error">${error.message}</span>`;
 }
 
 }
