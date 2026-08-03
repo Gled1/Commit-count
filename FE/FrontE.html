@@ -74,21 +74,31 @@ button:hover{
 }
 
 .repo-toolbar input{
-    flex:1 1 260px;
+    flex:1 1 240px;
+    min-width:180px;
 }
 
 .repo-toolbar select{
-    flex:1 1 280px;
+    flex:1 1 240px;
+    min-width:180px;
+}
+
+.repo-toolbar button{
+    flex:0 0 auto;
 }
 
 .repo-badge{
-    display:inline-block;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
     background:#1d4ed8;
     color:#eff6ff;
     border-radius:999px;
     padding:6px 12px;
     font-size:13px;
     font-weight:bold;
+    min-height:32px;
+    line-height:1;
 }
 
 #summary{
