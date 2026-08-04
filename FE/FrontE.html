@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,12 +53,6 @@ input, select{
 
 input[type="date"]{
     min-width:150px;
-    color-scheme: dark;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator{
-    cursor:pointer;
-    filter:invert(1);
 }
 
 button{
@@ -207,8 +201,8 @@ tbody tr:hover td{
         <option value="">Select a repository</option>
     </select>
 
-    <input type="date" id="since" placeholder="From date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
-    <input type="date" id="until" placeholder="To date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <input type="date" id="since" placeholder="From date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <input type="date" id="until" placeholder="To date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
 
     <button onclick="loadCommits()">
     Search
