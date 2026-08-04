@@ -66,11 +66,16 @@ button:hover{
 }
 
 .repo-toolbar{
+    position:sticky;
+    top:0;
+    z-index:3;
     display:flex;
     flex-wrap:wrap;
     gap:12px;
     align-items:center;
     margin-bottom:12px;
+    padding:8px 0;
+    background:#111827;
 }
 
 .repo-toolbar input{
@@ -94,6 +99,13 @@ button:hover{
     font-weight:bold;
 }
 
+.table-wrap{
+    max-height:60vh;
+    overflow:auto;
+    border:1px solid #334155;
+    border-radius:10px;
+}
+
 table{
     width:100%;
     border-collapse:collapse;
@@ -102,6 +114,13 @@ table{
 thead{
     background:#1e293b;
     color:#f8fafc;
+}
+
+thead th{
+    position:sticky;
+    top:0;
+    z-index:1;
+    background:#1e293b;
 }
 
 th,td{
@@ -146,18 +165,19 @@ tbody tr:hover{
 <div class="repo-toolbar">
     <input
     id="owner"
-    placeholder="GitHub Owner (e.g. microsoft)">
+    placeholder="GitHub Owner (e.g. microsoft)"
+    onkeydown="if(event.key === 'Enter'){ loadRepos(); }">
 
     <button onclick="loadRepos()">
     Load Repos
     </button>
 
-    <select id="repoSelect">
+    <select id="repoSelect" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
         <option value="">Select a repository</option>
     </select>
 
-    <input type="date" id="since" placeholder="From date">
-    <input type="date" id="until" placeholder="To date">
+    <input type="date" id="since" placeholder="From date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <input type="date" id="until" placeholder="To date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
 
     <button onclick="loadCommits()">
     Search
@@ -166,25 +186,27 @@ tbody tr:hover{
 
 <div id="summary"></div>
 
-<table>
+<div class="table-wrap">
+    <table>
 
-<thead>
+    <thead>
 
-<tr>
-<th>#</th>
-<th>SHA</th>
-<th>Author</th>
-<th>Date</th>
-<th>Message</th>
-</tr>
+    <tr>
+    <th>#</th>
+    <th>SHA</th>
+    <th>Author</th>
+    <th>Date</th>
+    <th>Message</th>
+    </tr>
 
-</thead>
+    </thead>
 
-<tbody id="tableBody">
+    <tbody id="tableBody">
 
-</tbody>
+    </tbody>
 
-</table>
+    </table>
+</div>
 
 </div>
 
