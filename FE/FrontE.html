@@ -21,7 +21,7 @@ body{
 }
 
 .container{
-    max-width:1200px;
+    max-width:1400px;
     margin:auto;
     background:#111827;
     border-radius:10px;
@@ -113,8 +113,8 @@ button:hover{
 
 table{
     width:100%;
-    min-width:900px;
     border-collapse:collapse;
+    table-layout:fixed;
 }
 
 thead{
@@ -129,11 +129,23 @@ thead th{
     background:#1e293b;
 }
 
+thead th:nth-child(1){width:80px;}
+thead th:nth-child(2){width:220px;}
+thead th:nth-child(3){width:150px;}
+thead th:nth-child(4){width:190px;}
+thead th:nth-child(5){width:100%;}
+
 th,td{
     border:1px solid #334155;
     padding:10px;
     text-align:left;
     color:#e5e7eb;
+    white-space:nowrap;
+}
+
+.message{
+    max-width:600px;
+    white-space:normal;
 }
 
 tbody tr:nth-child(even){
@@ -178,12 +190,12 @@ tbody tr:hover{
     Load Repos
     </button>
 
-    <select id="repoSelect">
+    <select id="repoSelect" onkeydown="if(event.key === 'Enter'){ event.preventDefault(); loadCommits(); }">
         <option value="">Select a repository</option>
     </select>
 
-    <input type="date" id="since" placeholder="From date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
-    <input type="date" id="until" placeholder="To date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <input type="date" id="since" placeholder="From date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }" readonly>
+    <input type="date" id="until" placeholder="To date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }" readonly>
 
     <button onclick="loadCommits()">
     Search
