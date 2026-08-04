@@ -53,6 +53,12 @@ input, select{
 
 input[type="date"]{
     min-width:150px;
+    color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator{
+    cursor:pointer;
+    filter:invert(1);
 }
 
 button{
@@ -109,12 +115,14 @@ button:hover{
     border:1px solid #334155;
     border-radius:10px;
     width:100%;
+    background:#0b1220;
 }
 
 table{
     width:100%;
-    border-collapse:collapse;
-    table-layout:fixed;
+    min-width:900px;
+    border-collapse:separate;
+    border-spacing:0;
 }
 
 thead{
@@ -127,37 +135,42 @@ thead th{
     top:0;
     z-index:1;
     background:#1e293b;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    padding:12px 14px;
+    text-align:left;
+    border-bottom:1px solid #334155;
 }
-
-thead th:nth-child(1){width:80px;}
-thead th:nth-child(2){width:220px;}
-thead th:nth-child(3){width:150px;}
-thead th:nth-child(4){width:190px;}
-thead th:nth-child(5){width:100%;}
 
 th,td{
-    border:1px solid #334155;
-    padding:10px;
+    border-right:1px solid #334155;
+    padding:12px 14px;
     text-align:left;
     color:#e5e7eb;
-    white-space:nowrap;
+    vertical-align:top;
 }
 
-.message{
-    max-width:600px;
-    white-space:normal;
+th:last-child, td:last-child{
+    border-right:none;
 }
 
-tbody tr:nth-child(even){
+tbody td{
     background:#0f172a;
+    border-bottom:1px solid #243145;
 }
 
-tbody tr:hover{
+tbody tr:nth-child(even) td{
+    background:#111c32;
+}
+
+tbody tr:hover td{
     background:#172554;
 }
 
 .message{
-    max-width:500px;
+    max-width:520px;
+    white-space:normal;
     word-break:break-word;
 }
 
@@ -194,8 +207,8 @@ tbody tr:hover{
         <option value="">Select a repository</option>
     </select>
 
-    <input type="date" id="since" placeholder="From date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }" readonly>
-    <input type="date" id="until" placeholder="To date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }" readonly>
+    <input type="date" id="since" placeholder="From date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <input type="date" id="until" placeholder="To date" onfocus="this.showPicker()" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
 
     <button onclick="loadCommits()">
     Search
