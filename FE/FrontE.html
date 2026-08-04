@@ -55,6 +55,26 @@ input[type="date"]{
     min-width:150px;
 }
 
+.date-group{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    min-width:320px;
+    padding:8px 10px;
+    background:#0b1220;
+    border:1px solid #475569;
+    border-radius:6px;
+}
+
+.date-select{
+    min-width:90px;
+    flex:1 1 90px;
+    background:#111827;
+    border:1px solid #334155;
+    color:#e5e7eb;
+}
+
 button{
     background:#2563eb;
     color:white;
@@ -201,8 +221,29 @@ tbody tr:hover td{
         <option value="">Select a repository</option>
     </select>
 
-    <input type="date" id="since" placeholder="From date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
-    <input type="date" id="until" placeholder="To date" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <div class="date-group">
+        <select id="sinceDay" class="date-select" title="Day">
+            <option value="">Day</option>
+        </select>
+        <select id="sinceMonth" class="date-select" title="Month">
+            <option value="">Month</option>
+        </select>
+        <select id="sinceYear" class="date-select" title="Year">
+            <option value="">Year</option>
+        </select>
+    </div>
+
+    <div class="date-group">
+        <select id="untilDay" class="date-select" title="Day">
+            <option value="">Day</option>
+        </select>
+        <select id="untilMonth" class="date-select" title="Month">
+            <option value="">Month</option>
+        </select>
+        <select id="untilYear" class="date-select" title="Year">
+            <option value="">Year</option>
+        </select>
+    </div>
 
     <button onclick="loadCommits()">
     Search
@@ -236,6 +277,51 @@ tbody tr:hover td{
 </div>
 
 <script>
+
+function populateDateDropdowns(){
+    const daySelects=[document.getElementById("sinceDay"),document.getElementById("untilDay")];
+    const monthSelects=[document.getElementById("sinceMonth"),document.getElementById("untilMonth")];
+    const yearSelects=[document.getElementById("sinceYear"),document.getElementById("untilYear")];
+    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const currentYear=new Date().getFullYear();
+
+    for(const select of daySelects){
+        for(let i=1;i<=31;i++){
+            const option=document.createElement("option");
+            option.value=String(i).padStart(2,"0");
+            option.textContent=String(i).padStart(2,"0");
+            select.appendChild(option);
+        }
+    }
+
+    for(const select of monthSelects){
+        months.forEach((month,index)=>{
+            const option=document.createElement("option");
+            option.value=String(index+1).padStart(2,"0");
+            option.textContent=month;
+            select.appendChild(option);
+        });
+    }
+
+    for(const select of yearSelects){
+        for(let year=currentYear-5;year<=currentYear;year++){
+            const option=document.createElement("option");
+            option.value=String(year);
+            option.textContent=String(year);
+            select.appendChild(option);
+        }
+    }
+}
+
+function buildDateString(day,month,year){
+    if(!day || !month || !year){
+        return "";
+    }
+
+    return `${year}-${month}-${day}`;
+}
+
+populateDateDropdowns();
 
 async function loadRepos(){
 
@@ -283,8 +369,14 @@ async function loadCommits(){
 
 const owner=document.getElementById("owner").value.trim();
 const repo=document.getElementById("repoSelect").value;
-const since=document.getElementById("since").value;
-const until=document.getElementById("until").value;
+const sinceDay=document.getElementById("sinceDay").value;
+const sinceMonth=document.getElementById("sinceMonth").value;
+const sinceYear=document.getElementById("sinceYear").value;
+const untilDay=document.getElementById("untilDay").value;
+const untilMonth=document.getElementById("untilMonth").value;
+const untilYear=document.getElementById("untilYear").value;
+const since=buildDateString(sinceDay,sinceMonth,sinceYear);
+const until=buildDateString(untilDay,untilMonth,untilYear);
 
 if(!owner || !repo){
     alert("Please enter the GitHub owner and choose a repository.");
