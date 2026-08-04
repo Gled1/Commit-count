@@ -51,6 +51,10 @@ input, select{
     color:#e5e7eb;
 }
 
+input[type="date"]{
+    min-width:150px;
+}
+
 button{
     background:#2563eb;
     color:white;
@@ -104,10 +108,12 @@ button:hover{
     overflow:auto;
     border:1px solid #334155;
     border-radius:10px;
+    width:100%;
 }
 
 table{
     width:100%;
+    min-width:900px;
     border-collapse:collapse;
 }
 
@@ -172,7 +178,7 @@ tbody tr:hover{
     Load Repos
     </button>
 
-    <select id="repoSelect" onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+    <select id="repoSelect">
         <option value="">Select a repository</option>
     </select>
 
