@@ -55,24 +55,89 @@ input[type="date"]{
     min-width:150px;
 }
 
-.date-group{
-    display:flex;
-    gap:8px;
-    align-items:center;
-    flex-wrap:wrap;
+.date-field{
+    position:relative;
     min-width:320px;
-    padding:8px 10px;
-    background:#0b1220;
-    border:1px solid #475569;
-    border-radius:6px;
 }
 
-.date-select{
-    min-width:90px;
-    flex:1 1 90px;
-    background:#111827;
-    border:1px solid #334155;
+.date-input-button{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #475569;
+    border-radius:6px;
+    background:#0b1220;
     color:#e5e7eb;
+    text-align:left;
+    cursor:pointer;
+    font-size:15px;
+}
+
+.calendar-popup{
+    position:absolute;
+    top:calc(100% + 8px);
+    left:0;
+    min-width:320px;
+    padding:12px;
+    border:1px solid #334155;
+    border-radius:10px;
+    background:#111827;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    z-index:5;
+}
+
+.calendar-toolbar,
+.calendar-weekdays,
+.calendar-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+}
+
+.calendar-toolbar{
+    align-items:center;
+    margin-bottom:10px;
+}
+
+.calendar-toolbar select{
+    width:100%;
+    min-width:0;
+}
+
+.calendar-weekdays span,
+.calendar-day,
+.nav-btn{
+    text-align:center;
+    font-size:13px;
+}
+
+.calendar-weekdays span{
+    color:#94a3b8;
+    padding:4px 0;
+}
+
+.calendar-day,
+.nav-btn{
+    border:1px solid #334155;
+    border-radius:6px;
+    background:#0b1220;
+    color:#e5e7eb;
+    cursor:pointer;
+    padding:8px 0;
+}
+
+.calendar-day:hover,
+.nav-btn:hover,
+.date-input-button:hover{
+    background:#172554;
+}
+
+.calendar-day.selected{
+    background:#2563eb;
+    border-color:#2563eb;
+}
+
+.calendar-day.empty{
+    visibility:hidden;
 }
 
 button{
@@ -221,28 +286,36 @@ tbody tr:hover td{
         <option value="">Select a repository</option>
     </select>
 
-    <div class="date-group">
-        <select id="sinceDay" class="date-select" title="Day">
-            <option value="">Day</option>
-        </select>
-        <select id="sinceMonth" class="date-select" title="Month">
-            <option value="">Month</option>
-        </select>
-        <select id="sinceYear" class="date-select" title="Year">
-            <option value="">Year</option>
-        </select>
+    <div class="date-field">
+        <button type="button" class="date-input-button" id="sinceButton">Select start date</button>
+        <div class="calendar-popup" id="sinceCalendar" hidden>
+            <div class="calendar-toolbar">
+                <button type="button" class="nav-btn" data-target="since" data-action="prev">◀</button>
+                <select id="sinceMonthSelect"></select>
+                <select id="sinceYearSelect"></select>
+                <button type="button" class="nav-btn" data-target="since" data-action="next">▶</button>
+            </div>
+            <div class="calendar-weekdays">
+                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="calendar-grid" id="sinceGrid"></div>
+        </div>
     </div>
 
-    <div class="date-group">
-        <select id="untilDay" class="date-select" title="Day">
-            <option value="">Day</option>
-        </select>
-        <select id="untilMonth" class="date-select" title="Month">
-            <option value="">Month</option>
-        </select>
-        <select id="untilYear" class="date-select" title="Year">
-            <option value="">Year</option>
-        </select>
+    <div class="date-field">
+        <button type="button" class="date-input-button" id="untilButton">Select end date</button>
+        <div class="calendar-popup" id="untilCalendar" hidden>
+            <div class="calendar-toolbar">
+                <button type="button" class="nav-btn" data-target="until" data-action="prev">◀</button>
+                <select id="untilMonthSelect"></select>
+                <select id="untilYearSelect"></select>
+                <button type="button" class="nav-btn" data-target="until" data-action="next">▶</button>
+            </div>
+            <div class="calendar-weekdays">
+                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="calendar-grid" id="untilGrid"></div>
+        </div>
     </div>
 
     <button onclick="loadCommits()">
@@ -278,40 +351,121 @@ tbody tr:hover td{
 
 <script>
 
-function populateDateDropdowns(){
-    const daySelects=[document.getElementById("sinceDay"),document.getElementById("untilDay")];
-    const monthSelects=[document.getElementById("sinceMonth"),document.getElementById("untilMonth")];
-    const yearSelects=[document.getElementById("sinceYear"),document.getElementById("untilYear")];
-    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const currentYear=new Date().getFullYear();
+const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const state={
+    since:{month:new Date().getMonth(), year:new Date().getFullYear(), selectedDate:""},
+    until:{month:new Date().getMonth(), year:new Date().getFullYear(), selectedDate:""}
+};
 
-    for(const select of daySelects){
-        for(let i=1;i<=31;i++){
-            const option=document.createElement("option");
-            option.value=String(i).padStart(2,"0");
-            option.textContent=String(i).padStart(2,"0");
-            select.appendChild(option);
-        }
-    }
+function initCalendarControls(){
+    const monthSelects=[document.getElementById("sinceMonthSelect"),document.getElementById("untilMonthSelect")];
+    const yearSelects=[document.getElementById("sinceYearSelect"),document.getElementById("untilYearSelect")];
+    const yearStart=new Date().getFullYear()-5;
+    const yearEnd=new Date().getFullYear()+5;
 
-    for(const select of monthSelects){
-        months.forEach((month,index)=>{
+    monthSelects.forEach((select,index)=>{
+        months.forEach((month,idx)=>{
             const option=document.createElement("option");
-            option.value=String(index+1).padStart(2,"0");
+            option.value=idx;
             option.textContent=month;
             select.appendChild(option);
         });
-    }
+        select.addEventListener("change",()=>{
+            const target=index===0?"since":"until";
+            state[target].month=parseInt(select.value,10);
+            renderCalendar(target);
+        });
+    });
 
-    for(const select of yearSelects){
-        for(let year=currentYear-5;year<=currentYear;year++){
+    yearSelects.forEach((select,index)=>{
+        for(let year=yearStart;year<=yearEnd;year++){
             const option=document.createElement("option");
-            option.value=String(year);
-            option.textContent=String(year);
+            option.value=year;
+            option.textContent=year;
             select.appendChild(option);
         }
+        select.addEventListener("change",()=>{
+            const target=index===0?"since":"until";
+            state[target].year=parseInt(select.value,10);
+            renderCalendar(target);
+        });
+    });
+
+    document.getElementById("sinceButton").addEventListener("click",()=>toggleCalendar("since"));
+    document.getElementById("untilButton").addEventListener("click",()=>toggleCalendar("until"));
+
+    document.querySelectorAll(".nav-btn").forEach((btn)=>{
+        btn.addEventListener("click",()=>{
+            const target=btn.dataset.target;
+            const action=btn.dataset.action;
+            if(action==="prev"){
+                if(state[target].month===0){
+                    state[target].month=11;
+                    state[target].year--;
+                }else{
+                    state[target].month--;
+                }
+            }else{
+                if(state[target].month===11){
+                    state[target].month=0;
+                    state[target].year++;
+                }else{
+                    state[target].month++;
+                }
+            }
+            renderCalendar(target);
+        });
+    });
+}
+
+function toggleCalendar(target){
+    const popup=document.getElementById(`${target}Calendar`);
+    popup.hidden=!popup.hidden;
+}
+
+function renderCalendar(target){
+    const monthSelect=document.getElementById(`${target}MonthSelect`);
+    const yearSelect=document.getElementById(`${target}YearSelect`);
+    const grid=document.getElementById(`${target}Grid`);
+    const button=document.getElementById(`${target}Button`);
+
+    monthSelect.value=state[target].month;
+    yearSelect.value=state[target].year;
+
+    const firstDay=new Date(state[target].year,state[target].month,1);
+    const daysInMonth=new Date(state[target].year,state[target].month+1,0).getDate();
+    const leadingEmpty=firstDay.getDay();
+
+    grid.innerHTML="";
+
+    for(let i=0;i<leadingEmpty;i++){
+        const empty=document.createElement("div");
+        empty.className="calendar-day empty";
+        grid.appendChild(empty);
+    }
+
+    for(let day=1;day<=daysInMonth;day++){
+        const cell=document.createElement("button");
+        cell.type="button";
+        cell.className="calendar-day";
+        cell.textContent=day;
+        const isoDate=`${state[target].year}-${String(state[target].month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+        if(state[target].selectedDate===isoDate){
+            cell.classList.add("selected");
+        }
+        cell.addEventListener("click",()=>{
+            state[target].selectedDate=isoDate;
+            button.textContent=isoDate;
+            renderCalendar(target);
+            document.getElementById(`${target}Calendar`).hidden=true;
+        });
+        grid.appendChild(cell);
     }
 }
+
+initCalendarControls();
+renderCalendar("since");
+renderCalendar("until");
 
 function buildDateString(day,month,year){
     if(!day || !month || !year){
@@ -320,8 +474,6 @@ function buildDateString(day,month,year){
 
     return `${year}-${month}-${day}`;
 }
-
-populateDateDropdowns();
 
 async function loadRepos(){
 
@@ -369,14 +521,8 @@ async function loadCommits(){
 
 const owner=document.getElementById("owner").value.trim();
 const repo=document.getElementById("repoSelect").value;
-const sinceDay=document.getElementById("sinceDay").value;
-const sinceMonth=document.getElementById("sinceMonth").value;
-const sinceYear=document.getElementById("sinceYear").value;
-const untilDay=document.getElementById("untilDay").value;
-const untilMonth=document.getElementById("untilMonth").value;
-const untilYear=document.getElementById("untilYear").value;
-const since=buildDateString(sinceDay,sinceMonth,sinceYear);
-const until=buildDateString(untilDay,untilMonth,untilYear);
+const since=state.since.selectedDate;
+const until=state.until.selectedDate;
 
 if(!owner || !repo){
     alert("Please enter the GitHub owner and choose a repository.");
