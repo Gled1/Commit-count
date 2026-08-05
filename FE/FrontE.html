@@ -559,7 +559,7 @@ if(!response.ok){
 }
 
 const contributionsResponse=await fetch(
-`http://localhost:5000/api/contributions?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`
+`http://localhost:5000/api/contributions?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&since=${encodeURIComponent(since ? since+"T00:00:00Z" : "")}&until=${encodeURIComponent(until ? until+"T23:59:59Z" : "")}`
 );
 const contributionData=await contributionsResponse.json();
 

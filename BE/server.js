@@ -83,14 +83,14 @@ app.get('/api/commits', async (req, res) => {
 });
 
 app.get('/api/contributions', async (req, res) => {
-  const { owner, repo } = req.query;
+  const { owner, repo, since, until } = req.query;
 
   if (!owner || !repo) {
     return res.status(400).json({ error: 'owner and repo are required query parameters' });
   }
 
   try {
-    const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contributors?per_page=100`;
+    const githubUrl = buildGitHubUrl(owner, repo, since, until);
     const response = await fetch(githubUrl, { headers: getHeaders() });
     const data = await response.json();
 
@@ -98,14 +98,14 @@ app.get('/api/contributions', async (req, res) => {
       return res.status(response.status).json({ error: data.message || 'GitHub API error' });
     }
 
-    const contributors = data.map((item) => ({
-      login: item.login,
-      contributions: item.contributions,
+    const contributions = data.map((item) => ({
+      sha: item.sha,
+      author: item.commit.author.name,
+      date: item.commit.author.date,
+      message: item.commit.message,
     }));
 
-    const total = contributors.reduce((sum, item) => sum + item.contributions, 0);
-
-    res.json({ total, contributors });
+    res.json({ total: contributions.length, contributions });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch contributions' });
