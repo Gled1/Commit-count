@@ -524,8 +524,8 @@ const repo=document.getElementById("repoSelect").value;
 const since=state.since.selectedDate;
 const until=state.until.selectedDate;
 
-if(!owner || !repo){
-    alert("Please enter the GitHub owner and choose a repository.");
+if(!owner){
+    alert("Please enter the GitHub owner.");
     return;
 }
 
@@ -538,9 +538,7 @@ document.getElementById("summary").innerHTML=
 try{
 
 const params=new URLSearchParams();
-
 params.append("owner",owner);
-params.append("repo",repo);
 
 if(since)
     params.append("since",since+"T00:00:00Z");
@@ -548,62 +546,63 @@ if(since)
 if(until)
     params.append("until",until+"T23:59:59Z");
 
-const response=await fetch(
-`http://localhost:5000/api/commits?${params.toString()}`
-);
+let response;
+let data;
+let contributionData={total:0};
 
-const data=await response.json();
+if(repo){
+    params.append("repo",repo);
+    response=await fetch(`http://localhost:5000/api/commits?${params.toString()}`);
+    data=await response.json();
 
-if(!response.ok){
-    throw new Error(data.error || "Server error.");
-}
+    if(!response.ok){
+        throw new Error(data.error || "Server error.");
+    }
 
-const contributionsResponse=await fetch(
-`http://localhost:5000/api/contributions?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&since=${encodeURIComponent(since ? since+"T00:00:00Z" : "")}&until=${encodeURIComponent(until ? until+"T23:59:59Z" : "")}`
-);
-const contributionData=await contributionsResponse.json();
+    const contributionsResponse=await fetch(
+        `http://localhost:5000/api/contributions?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&since=${encodeURIComponent(since ? since+"T00:00:00Z" : "")}&until=${encodeURIComponent(until ? until+"T23:59:59Z" : "")}`
+    );
+    contributionData=await contributionsResponse.json();
 
-if(!contributionsResponse.ok){
-    throw new Error(contributionData.error || "Failed to fetch contributions.");
-}
+    if(!contributionsResponse.ok){
+        throw new Error(contributionData.error || "Failed to fetch contributions.");
+    }
 
-document.getElementById("summary").innerHTML=
-`Total Commits: ${data.total} | Total Contributions: ${contributionData.total}`;
+    document.getElementById("summary").innerHTML=
+        `Total Commits: ${data.total} | Contributions in Range: ${contributionData.total}`;
 
-data.commits.forEach((commit,index)=>{
+    data.commits.forEach((commit,index)=>{
+        const row=document.createElement("tr");
+        row.innerHTML=`
+            <td>${index+1}</td>
+            <td>${commit.sha}</td>
+            <td>${commit.author}</td>
+            <td>${new Date(commit.date).toLocaleString()}</td>
+            <td class="message">${commit.message}</td>
+        `;
+        table.appendChild(row);
+    });
 
-const row=document.createElement("tr");
+    if(data.total===0){
+        table.innerHTML="<tr><td colspan='5'>No commits found.</td></tr>";
+    }
+}else{
+    response=await fetch(`http://localhost:5000/api/repos/commits?${params.toString()}`);
+    data=await response.json();
 
-row.innerHTML=`
+    if(!response.ok){
+        throw new Error(data.error || "Server error.");
+    }
 
-<td>${index+1}</td>
+    document.getElementById("summary").innerHTML=
+        `Total Commits Across All Repos: ${data.total}`;
 
-<td>${commit.sha}</td>
-
-<td>${commit.author}</td>
-
-<td>${new Date(commit.date).toLocaleString()}</td>
-
-<td class="message">${commit.message}</td>
-
-`;
-
-table.appendChild(row);
-
-});
-
-if(data.total===0){
-
-table.innerHTML=
-"<tr><td colspan='5'>No commits found.</td></tr>";
-
+    table.innerHTML=`<tr><td colspan='5'>Showing aggregate totals for ${data.repos.length} repositories.</td></tr>`;
 }
 
 }catch(error){
-
-document.getElementById("summary").innerHTML=
-`<span class="error">${error.message}</span>`;
-
+    document.getElementById("summary").innerHTML=
+        `<span class="error">${error.message}</span>`;
 }
 
 }

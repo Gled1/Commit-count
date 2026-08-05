@@ -112,6 +112,52 @@ app.get('/api/contributions', async (req, res) => {
   }
 });
 
+app.get('/api/repos/commits', async (req, res) => {
+  const { owner, since, until } = req.query;
+
+  if (!owner) {
+    return res.status(400).json({ error: 'owner is required query parameter' });
+  }
+
+  try {
+    const repoListUrl = `https://api.github.com/users/${owner}/repos?per_page=100`;
+    const repoListResponse = await fetch(repoListUrl, { headers: getHeaders() });
+    const repoListData = await repoListResponse.json();
+
+    if (!repoListResponse.ok) {
+      return res.status(repoListResponse.status).json({ error: repoListData.message || 'GitHub API error' });
+    }
+
+    const repoSummaries = [];
+    let total = 0;
+
+    for (const repo of repoListData) {
+      const githubUrl = buildGitHubUrl(owner, repo.name, since, until);
+      const response = await fetch(githubUrl, { headers: getHeaders() });
+      const data = await response.json();
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const commits = data.map((item) => ({
+        sha: item.sha,
+        author: item.commit.author.name,
+        date: item.commit.author.date,
+        message: item.commit.message,
+      }));
+
+      total += commits.length;
+      repoSummaries.push({ repo: repo.name, total: commits.length });
+    }
+
+    res.json({ total, repos: repoSummaries });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch repository commit totals' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Backend running on http://localhost:${port}`);
 });
