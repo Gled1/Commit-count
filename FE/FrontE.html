@@ -558,8 +558,17 @@ if(!response.ok){
     throw new Error(data.error || "Server error.");
 }
 
+const contributionsResponse=await fetch(
+`http://localhost:5000/api/contributions?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`
+);
+const contributionData=await contributionsResponse.json();
+
+if(!contributionsResponse.ok){
+    throw new Error(contributionData.error || "Failed to fetch contributions.");
+}
+
 document.getElementById("summary").innerHTML=
-`Total Commits: ${data.total}`;
+`Total Commits: ${data.total} | Total Contributions: ${contributionData.total}`;
 
 data.commits.forEach((commit,index)=>{
 
