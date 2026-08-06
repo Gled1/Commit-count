@@ -158,21 +158,20 @@ button:hover{
     position:sticky;
     top:0;
     z-index:3;
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:8px;
     align-items:center;
     margin-bottom:8px;
     padding:6px 0;
     background:#111827;
-    max-width:100%;
 }
 
 .repo-toolbar input,
 .repo-toolbar select,
 .repo-toolbar .date-field{
-    flex:1 1 140px;
     min-width:120px;
+    width:100%;
 }
 
 .repo-toolbar input,
@@ -182,13 +181,8 @@ button:hover{
 }
 
 .repo-toolbar button{
-    flex:0 0 auto;
     white-space:nowrap;
     padding:8px 12px;
-}
-
-.repo-toolbar .date-field{
-    min-width:140px;
 }
 
 .repo-toolbar .date-input-button{
@@ -207,6 +201,7 @@ button:hover{
     border-radius:10px;
     width:100%;
     background:#0b1220;
+    overflow-x:auto;
 }
 
 table{
