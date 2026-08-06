@@ -51,6 +51,34 @@ app.get('/api/repos', async (req, res) => {
   }
 });
 
+app.get('/api/resolve-repo', async (req, res) => {
+  const { repo } = req.query;
+
+  if (!repo) {
+    return res.status(400).json({ error: 'repo is required query parameter' });
+  }
+
+  try {
+    const githubUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(`${repo} in:name`)}&per_page=1`;
+    const response = await fetch(githubUrl, { headers: getHeaders() });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.message || 'GitHub API error' });
+    }
+
+    if (!data.items || data.items.length === 0) {
+      return res.status(404).json({ error: 'No matching repository found' });
+    }
+
+    const item = data.items[0];
+    res.json({ owner: item.owner.login, repo: item.name, fullName: item.full_name });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to resolve repository' });
+  }
+});
+
 app.get('/api/commits', async (req, res) => {
   const { owner, repo, since, until } = req.query;
 

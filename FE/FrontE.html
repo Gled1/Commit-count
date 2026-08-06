@@ -286,6 +286,11 @@ tbody tr:hover td{
         <option value="">Select a repository</option>
     </select>
 
+    <input
+    id="repoName"
+    placeholder="Or enter repo name"
+    onkeydown="if(event.key === 'Enter'){ loadCommits(); }">
+
     <div class="date-field">
         <button type="button" class="date-input-button" id="sinceButton">Select start date</button>
         <div class="calendar-popup" id="sinceCalendar" hidden>
@@ -521,12 +526,32 @@ async function loadCommits(){
 
 const owner=document.getElementById("owner").value.trim();
 const repo=document.getElementById("repoSelect").value;
+const repoName=document.getElementById("repoName").value.trim();
 const since=state.since.selectedDate;
 const until=state.until.selectedDate;
 
-if(!owner){
-    alert("Please enter the GitHub owner.");
+let resolvedOwner=owner;
+let resolvedRepo=repo;
+
+if(!resolvedOwner && !resolvedRepo && !repoName){
+    alert("Please enter a GitHub owner or repository name.");
     return;
+}
+
+if(!resolvedRepo && repoName){
+    if(resolvedOwner){
+        resolvedRepo=repoName;
+    }else{
+        const resolveResponse=await fetch(`http://localhost:5000/api/resolve-repo?repo=${encodeURIComponent(repoName)}`);
+        const resolveData=await resolveResponse.json();
+
+        if(!resolveResponse.ok){
+            throw new Error(resolveData.error || "Could not resolve repository.");
+        }
+
+        resolvedOwner=resolveData.owner;
+        resolvedRepo=resolveData.repo;
+    }
 }
 
 const table=document.getElementById("tableBody");
@@ -538,7 +563,7 @@ document.getElementById("summary").innerHTML=
 try{
 
 const params=new URLSearchParams();
-params.append("owner",owner);
+params.append("owner",resolvedOwner);
 
 if(since)
     params.append("since",since+"T00:00:00Z");
@@ -550,8 +575,8 @@ let response;
 let data;
 let contributionData={total:0};
 
-if(repo){
-    params.append("repo",repo);
+if(resolvedRepo){
+    params.append("repo",resolvedRepo);
     response=await fetch(`http://localhost:5000/api/commits?${params.toString()}`);
     data=await response.json();
 
@@ -560,7 +585,7 @@ if(repo){
     }
 
     const contributionsResponse=await fetch(
-        `http://localhost:5000/api/contributions?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&since=${encodeURIComponent(since ? since+"T00:00:00Z" : "")}&until=${encodeURIComponent(until ? until+"T23:59:59Z" : "")}`
+        `http://localhost:5000/api/contributions?owner=${encodeURIComponent(resolvedOwner)}&repo=${encodeURIComponent(resolvedRepo)}&since=${encodeURIComponent(since ? since+"T00:00:00Z" : "")}&until=${encodeURIComponent(until ? until+"T23:59:59Z" : "")}`
     );
     contributionData=await contributionsResponse.json();
 
