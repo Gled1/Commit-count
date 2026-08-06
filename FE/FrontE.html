@@ -189,8 +189,6 @@ button:hover{
 }
 
 .table-wrap{
-    max-height:60vh;
-    overflow:auto;
     border:1px solid #334155;
     border-radius:10px;
     width:100%;
@@ -202,6 +200,30 @@ table{
     min-width:900px;
     border-collapse:separate;
     border-spacing:0;
+}
+
+.pagination{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    padding:12px;
+    border-top:1px solid #334155;
+    background:#111827;
+}
+
+.pagination button{
+    padding:8px 12px;
+    border:none;
+    border-radius:6px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+
+.pagination button:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
 }
 
 thead{
@@ -350,6 +372,7 @@ tbody tr:hover td{
     </tbody>
 
     </table>
+    <div class="pagination" id="pagination"></div>
 </div>
 
 </div>
@@ -359,7 +382,10 @@ tbody tr:hover td{
 const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const state={
     since:{month:new Date().getMonth(), year:new Date().getFullYear(), selectedDate:""},
-    until:{month:new Date().getMonth(), year:new Date().getFullYear(), selectedDate:""}
+    until:{month:new Date().getMonth(), year:new Date().getFullYear(), selectedDate:""},
+    page:1,
+    pageSize:10,
+    allCommits:[]
 };
 
 function initCalendarControls(){
@@ -522,6 +548,62 @@ try{
 
 }
 
+function renderPage(){
+    const table=document.getElementById("tableBody");
+    const pagination=document.getElementById("pagination");
+    const totalPages=Math.max(1, Math.ceil(state.allCommits.length / state.pageSize));
+
+    if(state.allCommits.length===0){
+        table.innerHTML="<tr><td colspan='5'>No commits found.</td></tr>";
+        pagination.innerHTML="";
+        return;
+    }
+
+    const start=(state.page-1)*state.pageSize;
+    const end=start+state.pageSize;
+    const pageItems=state.allCommits.slice(start,end);
+
+    table.innerHTML="";
+    pageItems.forEach((commit,index)=>{
+        const row=document.createElement("tr");
+        row.innerHTML=`
+            <td>${start+index+1}</td>
+            <td>${commit.sha}</td>
+            <td>${commit.author}</td>
+            <td>${new Date(commit.date).toLocaleString()}</td>
+            <td class="message">${commit.message}</td>
+        `;
+        table.appendChild(row);
+    });
+
+    pagination.innerHTML="";
+    const prevBtn=document.createElement("button");
+    prevBtn.textContent="Prev";
+    prevBtn.disabled=state.page===1;
+    prevBtn.addEventListener("click",()=>{
+        if(state.page>1){
+            state.page--;
+            renderPage();
+        }
+    });
+    pagination.appendChild(prevBtn);
+
+    const pageInfo=document.createElement("span");
+    pageInfo.textContent=`Page ${state.page} of ${totalPages}`;
+    pagination.appendChild(pageInfo);
+
+    const nextBtn=document.createElement("button");
+    nextBtn.textContent="Next";
+    nextBtn.disabled=state.page===totalPages;
+    nextBtn.addEventListener("click",()=>{
+        if(state.page<totalPages){
+            state.page++;
+            renderPage();
+        }
+    });
+    pagination.appendChild(nextBtn);
+}
+
 async function loadCommits(){
 
 const owner=document.getElementById("owner").value.trim();
@@ -529,6 +611,9 @@ const repo=document.getElementById("repoSelect").value;
 const repoName=document.getElementById("repoName").value.trim();
 const since=state.since.selectedDate;
 const until=state.until.selectedDate;
+
+state.page=1;
+state.allCommits=[];
 
 let resolvedOwner=owner;
 let resolvedRepo=repo;
@@ -593,24 +678,10 @@ if(resolvedRepo){
         throw new Error(contributionData.error || "Failed to fetch contributions.");
     }
 
+    state.allCommits=data.commits || [];
     document.getElementById("summary").innerHTML=
         `Total Commits: ${data.total} | Contributions in Range: ${contributionData.total}`;
-
-    data.commits.forEach((commit,index)=>{
-        const row=document.createElement("tr");
-        row.innerHTML=`
-            <td>${index+1}</td>
-            <td>${commit.sha}</td>
-            <td>${commit.author}</td>
-            <td>${new Date(commit.date).toLocaleString()}</td>
-            <td class="message">${commit.message}</td>
-        `;
-        table.appendChild(row);
-    });
-
-    if(data.total===0){
-        table.innerHTML="<tr><td colspan='5'>No commits found.</td></tr>";
-    }
+    renderPage();
 }else{
     response=await fetch(`http://localhost:5000/api/repos/commits?${params.toString()}`);
     data=await response.json();
@@ -619,10 +690,11 @@ if(resolvedRepo){
         throw new Error(data.error || "Server error.");
     }
 
+    state.allCommits=[];
     document.getElementById("summary").innerHTML=
         `Total Commits Across All Repos: ${data.total}`;
-
     table.innerHTML=`<tr><td colspan='5'>Showing aggregate totals for ${data.repos.length} repositories.</td></tr>`;
+    document.getElementById("pagination").innerHTML="";
 }
 
 }catch(error){
