@@ -657,18 +657,28 @@ if(!resolvedOwner && !resolvedRepo && !repoName){
 }
 
 if(!resolvedRepo && repoName){
-    if(resolvedOwner){
-        resolvedRepo=repoName;
-    }else{
-        const resolveResponse=await fetch(`http://localhost:5000/api/resolve-repo?repo=${encodeURIComponent(repoName)}`);
-        const resolveData=await resolveResponse.json();
-
-        if(!resolveResponse.ok){
-            throw new Error(resolveData.error || "Could not resolve repository.");
+    if(repoName.includes("/")){
+        const [maybeOwner, maybeRepo] = repoName.split("/").map((part) => part.trim());
+        if(maybeOwner && maybeRepo){
+            resolvedOwner = maybeOwner;
+            resolvedRepo = maybeRepo;
         }
+    }
 
-        resolvedOwner=resolveData.owner;
-        resolvedRepo=resolveData.repo;
+    if(!resolvedRepo){
+        if(resolvedOwner){
+            resolvedRepo = repoName;
+        } else {
+            const resolveResponse = await fetch(`http://localhost:5000/api/resolve-repo?repo=${encodeURIComponent(repoName)}`);
+            const resolveData = await resolveResponse.json();
+
+            if(!resolveResponse.ok){
+                throw new Error(resolveData.error || "Could not resolve repository.");
+            }
+
+            resolvedOwner = resolveData.owner;
+            resolvedRepo = resolveData.repo;
+        }
     }
 }
 
@@ -723,11 +733,10 @@ if(resolvedRepo){
         throw new Error(data.error || "Server error.");
     }
 
-    state.allCommits=[];
+    state.allCommits = data.commits || [];
     document.getElementById("summary").innerHTML=
-        `Total Commits Across All Repos: ${data.total}`;
-    table.innerHTML=`<tr><td colspan='5'>Showing aggregate totals for ${data.repos.length} repositories.</td></tr>`;
-    document.getElementById("pagination").innerHTML="";
+        `Total Commits Across All Repos: ${data.total} across ${data.repos.length} repositories`;
+    renderPage();
 }
 
 }catch(error){

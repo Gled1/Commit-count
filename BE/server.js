@@ -158,6 +158,7 @@ app.get('/api/repos/commits', async (req, res) => {
 
     const repoSummaries = [];
     let total = 0;
+    const allCommits = [];
 
     for (const repo of repoListData) {
       const githubUrl = buildGitHubUrl(owner, repo.name, since, until);
@@ -173,13 +174,15 @@ app.get('/api/repos/commits', async (req, res) => {
         author: item.commit.author.name,
         date: item.commit.author.date,
         message: item.commit.message,
+        repo: repo.name,
       }));
 
       total += commits.length;
       repoSummaries.push({ repo: repo.name, total: commits.length });
+      allCommits.push(...commits);
     }
 
-    res.json({ total, repos: repoSummaries });
+    res.json({ total, repos: repoSummaries, commits: allCommits });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch repository commit totals' });
